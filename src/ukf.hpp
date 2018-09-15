@@ -57,6 +57,13 @@ public:
      */
     const Eigen::MatrixXd &getP() const { return P_; }
 
+    /**
+     * Generates Sigma points for the given parameters
+     * @param x state vector
+     * @param P process covariance matrix
+     * @return the sigma points
+     */
+    MatrixXd generateSigmaPoints(const MatrixXd &x, const MatrixXd &P);
 
 private:
     ///* initially set to false, set to true in first call of ProcessMeasurement

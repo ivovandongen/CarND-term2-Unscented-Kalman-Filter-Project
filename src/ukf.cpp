@@ -24,10 +24,10 @@ UKF::UKF() {
     P_ = MatrixXd(5, 5);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 30;
+    std_a_ = 30; // TODO
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = 30;
+    std_yawdd_ = 30; // TODO
 
     //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
     // Laser measurement noise standard deviation position1 in m
@@ -56,6 +56,34 @@ UKF::UKF() {
 }
 
 UKF::~UKF() = default;
+
+MatrixXd UKF::generateSigmaPoints(const MatrixXd &x, const MatrixXd &P) {
+
+    // set state dimension
+    auto n_x = x.rows();
+
+    // define spreading parameter
+    double lambda = 3 - n_x;
+
+    // create sigma point matrix
+    MatrixXd Xsig = MatrixXd(n_x, 2 * n_x + 1);
+
+    // calculate square root of P
+    MatrixXd A = P.llt().matrixL();
+
+    // Calculate Sigma points
+
+    // col 0 -> xk|k
+    Xsig.col(0) << x;
+
+    // Other points
+    for (size_t n = 0; n < n_x; n++) {
+        Xsig.col(1 + n) << x + sqrt(lambda + n_x) * A.col(n);
+        Xsig.col(1 + n_x + n) << x - sqrt(lambda + n_x) * A.col(n);
+    }
+
+    return Xsig;
+}
 
 /**
  * @param {MeasurementPackage} meas_package The latest measurement data of
