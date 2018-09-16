@@ -65,6 +65,16 @@ public:
      */
     MatrixXd generateSigmaPoints(const MatrixXd &x, const MatrixXd &P);
 
+    /**
+     * Generates augmented Sigma points using std_a and std_yawdd
+     * @param x state vector
+     * @param P process covariance matrix
+     * @param std_a Process noise standard deviation longitudinal acceleration in m/s^2
+     * @param std_yawdd Process noise standard deviation yaw acceleration in rad/s^2
+     * @return the augmented sigma points
+     */
+    MatrixXd generateAugmentedSigmaPoints(const MatrixXd &x, const MatrixXd &P, double std_a, double std_yawdd);
+
 private:
     ///* initially set to false, set to true in first call of ProcessMeasurement
     bool is_initialized_;

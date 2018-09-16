@@ -85,6 +85,52 @@ MatrixXd UKF::generateSigmaPoints(const MatrixXd &x, const MatrixXd &P) {
     return Xsig;
 }
 
+MatrixXd UKF::generateAugmentedSigmaPoints(const MatrixXd &x, const MatrixXd &P, double std_a, double std_yawdd) {
+
+    // set state dimension
+    auto n_x = x.rows();
+
+    //set augmented dimension
+    auto n_aug = n_x + 2;
+
+    //define spreading parameter
+    double lambda = 3 - n_aug;
+
+    //create augmented mean vector
+    VectorXd x_aug = VectorXd(7);
+
+    //create augmented state covariance
+    MatrixXd P_aug = MatrixXd(7, 7);
+
+    //create sigma point matrix
+    MatrixXd Xsig_aug = MatrixXd(n_aug, 2 * n_aug + 1);
+
+    //create augmented mean state
+    x_aug << x, 0, 0;
+
+    //create augmented covariance matrix
+    MatrixXd Q(2, 2);
+    Q << std_a * std_a, 0,
+            0, std_yawdd * std_yawdd;
+    P_aug.block(0, 0, n_x, n_x) << P;
+    P_aug.block(n_x, n_x, 2, 2) << Q;
+
+    //create square root matrix
+    MatrixXd A = P_aug.llt().matrixL();
+
+    //create augmented sigma points
+    // col 0 -> xk|k
+    Xsig_aug.col(0) << x_aug;
+
+    // Other points
+    for (size_t n = 0; n < n_aug; n++) {
+        Xsig_aug.col(1 + n) << x_aug + sqrt(lambda + n_aug) * A.col(n);
+        Xsig_aug.col(1 + n_aug + n) << x_aug - sqrt(lambda + n_aug) * A.col(n);
+    }
+
+    return Xsig_aug;
+}
+
 /**
  * @param {MeasurementPackage} meas_package The latest measurement data of
  * either radar or laser.
