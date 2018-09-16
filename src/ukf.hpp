@@ -75,6 +75,15 @@ public:
      */
     MatrixXd generateAugmentedSigmaPoints(const MatrixXd &x, const MatrixXd &P, double std_a, double std_yawdd);
 
+    /**
+     * Predict augmented sigma points
+     * @param Xsig_aug the augmented sigma points
+     * @param stateDimension the length of the state vector x
+     * @param delta_t the time since the last update (in s)
+     * @return the predicted sigma points
+     */
+    MatrixXd predictSigmaPoints(const MatrixXd &Xsig_aug, int stateDimension, double delta_t);
+
 private:
     ///* initially set to false, set to true in first call of ProcessMeasurement
     bool is_initialized_;

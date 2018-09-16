@@ -131,6 +131,55 @@ MatrixXd UKF::generateAugmentedSigmaPoints(const MatrixXd &x, const MatrixXd &P,
     return Xsig_aug;
 }
 
+MatrixXd UKF::predictSigmaPoints(const MatrixXd &Xsig_aug, int stateDimension, double delta_t) {
+    // set state dimension (output matrix rows)
+    int n_x = stateDimension;
+
+    // Number of sigma points
+    auto n_points = Xsig_aug.cols();
+
+    // create matrix with predicted sigma points as columns
+    MatrixXd Xsig_pred = MatrixXd(n_x, n_points);
+
+    for (size_t p = 0; p < n_points; p++) {
+        auto sig = Xsig_aug.col(p);
+        double px = sig(0);
+        double py = sig(1);
+        double v = sig(2);
+        double yaw = sig(3);
+        double yawd = sig(4);
+        double nu_a = sig(5);
+        double nu_yawdd = sig(6);
+
+        VectorXd x(5);
+        x << px, py, v, yaw, yawd;
+
+        VectorXd a(5);
+
+        if (abs(yawd) > 0.001) {
+            a.row(0) << v / yawd * (sin(yaw + yawd * delta_t) - sin(yaw));
+            a.row(1) << v / yawd * (-cos(yaw + yawd * delta_t) + cos(yaw));
+        } else {
+            a.row(0) << v * cos(yaw) * delta_t;
+            a.row(1) << v * sin(yaw) * delta_t;
+        }
+        a.row(2) << 0;
+        a.row(3) << yawd * delta_t;
+        a.row(4) << 0;
+
+        VectorXd b(5);
+        b.row(0) << .5 * delta_t * delta_t * cos(yaw) * nu_a;
+        b.row(1) << .5 * delta_t * delta_t * sin(yaw) * nu_a;
+        b.row(2) << delta_t * nu_a;
+        b.row(3) << .5 * delta_t * delta_t * nu_yawdd;
+        b.row(4) << delta_t * nu_yawdd;
+
+        Xsig_pred.col(p) << x + a + b;
+    }
+
+    return Xsig_pred;
+}
+
 /**
  * @param {MeasurementPackage} meas_package The latest measurement data of
  * either radar or laser.
