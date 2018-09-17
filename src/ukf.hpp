@@ -57,6 +57,7 @@ public:
      */
     const Eigen::MatrixXd &getP() const { return P_; }
 
+protected:
     /**
      * Generates Sigma points for the given parameters
      * @param x state vector

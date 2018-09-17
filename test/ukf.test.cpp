@@ -1,5 +1,7 @@
 #include <test.hpp>
 
+// Make protected methods accessible for testing
+#define protected public
 #include <ukf.hpp>
 
 TEST(UKF, GenerateAugmentedSigmaPoints) {
