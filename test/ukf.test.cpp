@@ -117,3 +117,70 @@ TEST(UKF, PredictSigmaPoints) {
 
     ASSERT_TRUE(expected.isApprox(predictedSigmaPoints, 0.0001));
 }
+
+TEST(UKF, CreateWeights) {
+    UKF ukf;
+    int n_aug = 7;
+
+    VectorXd weights = ukf.createWeights(n_aug);
+    ASSERT_EQ(15, weights.rows());
+}
+
+TEST(UKF, PredictMean) {
+    UKF ukf;
+
+    int n_x = 5;
+    int n_aug = 7;
+
+    //create example matrix with predicted sigma points
+    MatrixXd Xsig_pred = MatrixXd(n_x, 2 * n_aug + 1);
+    Xsig_pred <<
+              5.9374, 6.0640, 5.925, 5.9436, 5.9266, 5.9374, 5.9389, 5.9374, 5.8106, 5.9457, 5.9310, 5.9465, 5.9374, 5.9359, 5.93744,
+            1.48, 1.4436, 1.660, 1.4934, 1.5036, 1.48, 1.4868, 1.48, 1.5271, 1.3104, 1.4787, 1.4674, 1.48, 1.4851, 1.486,
+            2.204, 2.2841, 2.2455, 2.2958, 2.204, 2.204, 2.2395, 2.204, 2.1256, 2.1642, 2.1139, 2.204, 2.204, 2.1702, 2.2049,
+            0.5367, 0.47338, 0.67809, 0.55455, 0.64364, 0.54337, 0.5367, 0.53851, 0.60017, 0.39546, 0.51900, 0.42991, 0.530188, 0.5367, 0.535048,
+            0.352, 0.29997, 0.46212, 0.37633, 0.4841, 0.41872, 0.352, 0.38744, 0.40562, 0.24347, 0.32926, 0.2214, 0.28687, 0.352, 0.318159;
+
+    static VectorXd weights = ukf.createWeights(n_aug);
+
+    VectorXd predicted = ukf.predictMean(Xsig_pred, weights);
+
+    VectorXd expected(n_x);
+    expected << 5.93637,
+            1.49035,
+            2.20528,
+            0.536853,
+            0.353577;
+
+    ASSERT_TRUE(expected.isApprox(predicted, 0.0001));
+}
+
+TEST(UKF, PredictCovariance) {
+    UKF ukf;
+    int n_x = 5;
+    int n_aug = 7;
+
+    //create example matrix with predicted sigma points
+    MatrixXd Xsig_pred = MatrixXd(n_x, 2 * n_aug + 1);
+    Xsig_pred <<
+              5.9374, 6.0640, 5.925, 5.9436, 5.9266, 5.9374, 5.9389, 5.9374, 5.8106, 5.9457, 5.9310, 5.9465, 5.9374, 5.9359, 5.93744,
+            1.48, 1.4436, 1.660, 1.4934, 1.5036, 1.48, 1.4868, 1.48, 1.5271, 1.3104, 1.4787, 1.4674, 1.48, 1.4851, 1.486,
+            2.204, 2.2841, 2.2455, 2.2958, 2.204, 2.204, 2.2395, 2.204, 2.1256, 2.1642, 2.1139, 2.204, 2.204, 2.1702, 2.2049,
+            0.5367, 0.47338, 0.67809, 0.55455, 0.64364, 0.54337, 0.5367, 0.53851, 0.60017, 0.39546, 0.51900, 0.42991, 0.530188, 0.5367, 0.535048,
+            0.352, 0.29997, 0.46212, 0.37633, 0.4841, 0.41872, 0.352, 0.38744, 0.40562, 0.24347, 0.32926, 0.2214, 0.28687, 0.352, 0.318159;
+
+
+    static VectorXd weights = ukf.createWeights(n_aug);
+    VectorXd x = ukf.predictMean(Xsig_pred, weights);
+
+    MatrixXd predicted = ukf.predictProcessCovariance(Xsig_pred, x, weights);
+
+    MatrixXd expected(n_x, n_x);
+    expected.row(0) << 0.00543425, -0.0024053, 0.00341576, -0.00348196, -0.00299378;
+    expected.row(1) << -0.0024053, 0.010845, 0.0014923, 0.00980182, 0.00791091;
+    expected.row(2) << 0.00341576, 0.0014923, 0.00580129, 0.000778632, 0.000792973;
+    expected.row(3) << -0.00348196, 0.00980182, 0.000778632, 0.0119238, 0.0112491;
+    expected.row(4) << -0.00299378, 0.00791091, 0.000792973, 0.0112491, 0.0126972;
+
+    ASSERT_TRUE(expected.isApprox(predicted, 0.0001));
+}

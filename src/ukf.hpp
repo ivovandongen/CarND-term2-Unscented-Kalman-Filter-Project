@@ -84,6 +84,31 @@ public:
      */
     MatrixXd predictSigmaPoints(const MatrixXd &Xsig_aug, int stateDimension, double delta_t);
 
+    /**
+     * Create weights for state and process covariance prediction
+     * @param augmentedStateDimension the size of the augmented state mastrix
+     * @return the weights
+     */
+    VectorXd createWeights(int augmentedStateDimension);
+
+    /**
+     * Predict the mean of the sigma points
+     * @param Xsig_pred the predicted sigma points
+     * @param weights the weights
+     * @return the predicted mean vector x
+     */
+    VectorXd predictMean(const MatrixXd &Xsig_pred, const VectorXd &weights);
+
+    /**
+     * Predicts the
+     * @param Xsig_pred the predicted sigma points
+     * @param x the predicted mean
+     * @param weights the weights
+     * @return the predicted process covariance
+     */
+    MatrixXd predictProcessCovariance(const MatrixXd &Xsig_pred, const MatrixXd &x,
+                                      const VectorXd &weights);
+
 private:
     ///* initially set to false, set to true in first call of ProcessMeasurement
     bool is_initialized_;

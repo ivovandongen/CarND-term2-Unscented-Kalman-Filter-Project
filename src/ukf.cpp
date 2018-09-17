@@ -6,6 +6,18 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
+namespace {
+    // normalize angles between -2PI and +2PI
+    void normalizeAngle(double &angle) {
+        while (angle > M_PI) {
+            angle -= 2. * M_PI;
+        }
+        while (angle < -M_PI) {
+            angle += 2. * M_PI;
+        }
+    }
+} // namespace
+
 /**
  * Initializes Unscented Kalman filter
  * This is scaffolding, do not modify
@@ -178,6 +190,54 @@ MatrixXd UKF::predictSigmaPoints(const MatrixXd &Xsig_aug, int stateDimension, d
     }
 
     return Xsig_pred;
+}
+
+VectorXd UKF::createWeights(int augmentedStateDimension) {
+    int n_sigma_points = 2 * augmentedStateDimension + 1;
+    //create vector for weights
+    VectorXd weights = VectorXd(n_sigma_points);
+
+    //define spreading parameter
+    double lambda = 3 - augmentedStateDimension;
+
+    //set weights
+    weights(0) = lambda / (lambda + augmentedStateDimension);
+    for (int i = 1; i < n_sigma_points; i++) {
+        weights(i) = 1 / (2 * (augmentedStateDimension + lambda));
+    }
+
+    return weights;
+}
+
+VectorXd UKF::predictMean(const MatrixXd &Xsig_pred, const VectorXd &weights) {
+    //create vector for predicted state
+    VectorXd x = VectorXd(Xsig_pred.rows());
+
+    x.fill(.0);
+    for (int i = 0; i < Xsig_pred.cols(); i++) {
+        x += weights(i) * Xsig_pred.col(i);
+    }
+
+    return x;
+}
+
+MatrixXd UKF::predictProcessCovariance(const MatrixXd &Xsig_pred, const MatrixXd &x, const VectorXd &weights) {
+    //create covariance matrix for prediction
+    MatrixXd P = MatrixXd(Xsig_pred.rows(), Xsig_pred.rows());
+
+    //predict state covariance matrix
+    P.fill(.0);
+    for (int i = 0; i < Xsig_pred.cols(); i++) {
+        // Diff
+        VectorXd diff = Xsig_pred.col(i) - x;
+
+        // normalise angles
+        normalizeAngle(diff(3));
+
+        P += weights(i) * diff * diff.transpose();
+    }
+
+    return P;
 }
 
 /**
