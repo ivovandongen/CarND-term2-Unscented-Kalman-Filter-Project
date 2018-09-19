@@ -163,14 +163,10 @@ private:
     // Tweakable constants //
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-//    const double std_a_{30};
     const double std_a_{2};
-    //TODO
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-//    const double std_yawdd_{30};
     const double std_yawdd_{2};
-    //TODO
 
     // if this is false, laser measurements will be ignored (except for init)
     const bool use_laser_{true};
