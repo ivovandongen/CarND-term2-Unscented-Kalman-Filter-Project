@@ -2,6 +2,7 @@
 
 // Make protected methods accessible for testing
 #define protected public
+
 #include <ukf.hpp>
 
 TEST(UKF, GenerateAugmentedSigmaPoints) {
@@ -26,8 +27,12 @@ TEST(UKF, GenerateAugmentedSigmaPoints) {
             -0.0022, 0.0071, 0.0007, 0.0098, 0.0100,
             -0.0020, 0.0060, 0.0008, 0.0100, 0.0123;
 
+    // Process noise
+    MatrixXd Q(2, 2);
+    Q << 0.2 * 0.2, 0, 0, 0.2 * 0.2;
+
     // Generate sigma points
-    MatrixXd sigmaPoints = ukf.generateAugmentedSigmaPoints(x, P, 0.2, 0.2);
+    MatrixXd sigmaPoints = ukf.generateAugmentedSigmaPoints(x, P, Q);
 
     // Expected
     MatrixXd Xsig_expected(nx_aug, 2 * nx_aug + 1);
@@ -103,7 +108,7 @@ TEST(UKF, PredictSigmaPoints) {
             0, 0, 0, 0, 0, 0, 0.34641, 0, 0, 0, 0, 0, 0, -0.34641, 0,
             0, 0, 0, 0, 0, 0, 0, 0.34641, 0, 0, 0, 0, 0, 0, -0.34641;
 
-    MatrixXd predictedSigmaPoints = ukf.predictSigmaPoints(Xsig_aug, n_x, 0.1);
+    MatrixXd predictedSigmaPoints = ukf.predictSigmaPoints(Xsig_aug, 0.1);
 
     MatrixXd expected(n_x, 2 * n_aug + 1);
     expected.row(0)

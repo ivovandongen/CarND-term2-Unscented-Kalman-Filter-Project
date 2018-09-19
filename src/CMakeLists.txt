@@ -4,6 +4,8 @@ include(${CMAKE_SOURCE_DIR}/deps/json.cmake)
 include(${CMAKE_SOURCE_DIR}/deps/uWebSockets.cmake)
 
 add_library(core STATIC
+    ${CMAKE_SOURCE_DIR}/src/coordinates.hpp
+    ${CMAKE_SOURCE_DIR}/src/coordinates.cpp
     ${CMAKE_SOURCE_DIR}/src/tools.hpp
     ${CMAKE_SOURCE_DIR}/src/tools.cpp
     ${CMAKE_SOURCE_DIR}/src/measurement_package.hpp
