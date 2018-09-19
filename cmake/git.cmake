@@ -1,5 +1,22 @@
 find_package(Git QUIET)
+
+# Try some alternate paths for macos installs
+if (NOT GIT_FOUND)
+    message("git not found. Trying alternatives")
+    if (EXISTS "/usr/local/bin/git")
+        set(GIT_EXECUTABLE "/usr/local/bin/git")
+        set(GIT_FOUND TRUE)
+    elseif(EXISTS "/usr/bin/git")
+        set(GIT_EXECUTABLE "/usr/bin/git")
+        set(GIT_FOUND TRUE)
+    else()
+        message("No alternative path could be found for git")
+    endif()
+endif()
+
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    message(STATUS "Using git from ${GIT_EXECUTABLE}")
+
     # Update submodules as needed
     option(GIT_SUBMODULE "Check submodules during build" ON)
     if(GIT_SUBMODULE)
@@ -11,8 +28,8 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
             message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
         endif()
     else()
-        message(No git submodules found)
+        message("No git submodules found")
     endif()
 else()
-    message(Could not find git)
+    message(FATAL "Could not find git")
 endif()
