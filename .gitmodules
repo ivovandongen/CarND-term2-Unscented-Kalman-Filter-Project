@@ -10,3 +10,6 @@
 [submodule "deps/json"]
 	path = deps/json
 	url = git@github.com:nlohmann/json.git
+[submodule "deps/CSVWriter"]
+	path = deps/CSVWriter
+	url = git@github.com:al-eax/CSVWriter.git
