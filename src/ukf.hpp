@@ -104,7 +104,7 @@ protected:
     VectorXd predictMean(const MatrixXd &Xsig_pred, const VectorXd &weights);
 
     /**
-     * Predicts the
+     * Predicts the process covariance of the sigma points
      * @param Xsig_pred the predicted sigma points
      * @param x the predicted mean
      * @param weights the weights
@@ -112,6 +112,33 @@ protected:
      */
     MatrixXd predictProcessCovariance(const MatrixXd &Xsig_pred, const VectorXd &x,
                                       const VectorXd &weights);
+
+
+    /**
+     * Converter function to convert sigma points to measurement space
+     */
+    using SigmaConverter = std::function<VectorXd(const VectorXd &)>;
+
+    /**
+     * Predicts the state in the measurement space
+     * @param n_z the dimension of the measurement
+     * @param R the noise covariance matrix to use
+     * @param Zsig output parameter for the matrix for sigma points in measurement space
+     * @param z_pred output parameter for the mean predicted measurement
+     * @param S output parameter for the innovation covariance matrix S
+     * @param converter the converter to use to convert the predicted sigma points to the measurement space
+     */
+    void predictMeasurement(int n_z, const MatrixXd &R, MatrixXd &Zsig, VectorXd &z_pred, MatrixXd &S,
+                            const SigmaConverter &converter);
+
+    /**
+     *
+     * @param z measurement vector
+     * @param Zsig matrix for sigma points in measurement space
+     * @param z_pred mean predicted measurement
+     * @param S Innovation covariance matrix S
+     */
+    void updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const VectorXd &z_pred, const MatrixXd &S);
 
 private:
     // Provided constants //
@@ -144,7 +171,7 @@ private:
     //TODO
 
     // if this is false, laser measurements will be ignored (except for init)
-    const bool use_laser_{false};
+    const bool use_laser_{true};
 
     // if this is false, radar measurements will be ignored (except for init)
     const bool use_radar_{true};
@@ -182,5 +209,5 @@ private:
     MatrixXd R_radar_;
 
     // Radar measurement covariance matrix
-    //TODO MatrixXd R_laser_;
+    MatrixXd R_laser_;
 };
