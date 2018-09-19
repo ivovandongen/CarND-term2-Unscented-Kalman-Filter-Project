@@ -2,6 +2,7 @@
 include(${CMAKE_SOURCE_DIR}/deps/eigen.cmake)
 include(${CMAKE_SOURCE_DIR}/deps/json.cmake)
 include(${CMAKE_SOURCE_DIR}/deps/uWebSockets.cmake)
+include(${CMAKE_SOURCE_DIR}/deps/CSVWriter.cmake)
 
 add_library(core STATIC
     ${CMAKE_SOURCE_DIR}/src/coordinates.hpp
@@ -21,6 +22,7 @@ target_link_libraries(core PUBLIC
     Eigen
     json
     libuWS
+    CSVWriter
     )
 
 if (DO_CLANG_TIDY)

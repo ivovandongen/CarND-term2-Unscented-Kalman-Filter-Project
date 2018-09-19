@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <CSVWriter.h>
 #include <measurement_package.hpp>
 
 #include <fstream>
@@ -137,8 +138,9 @@ protected:
      * @param Zsig matrix for sigma points in measurement space
      * @param z_pred mean predicted measurement
      * @param S Innovation covariance matrix S
+     * @return NIS value
      */
-    void updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const VectorXd &z_pred, const MatrixXd &S);
+    double updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const VectorXd &z_pred, const MatrixXd &S);
 
 private:
     // Provided constants //
@@ -210,4 +212,8 @@ private:
 
     // Radar measurement covariance matrix
     MatrixXd R_laser_;
+
+    // Used to store NIS values
+    CSVWriter radarCSV;
+    CSVWriter laserCSV;
 };

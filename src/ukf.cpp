@@ -35,7 +35,13 @@ UKF::UKF() {
     R_laser_.row(1) << 0, std_laspy_ * std_laspy_;
 }
 
-UKF::~UKF() = default;
+UKF::~UKF() {
+    std::cout << "=== RADAR NIS===" << std::endl;
+    std::cout << radarCSV << std::endl << std::endl;
+
+    std::cout << "=== LASER NIS===" << std::endl;
+    std::cout << laserCSV << std::endl << std::endl;
+};
 
 MatrixXd UKF::generateSigmaPoints(const VectorXd &x, const MatrixXd &P) {
 
@@ -270,7 +276,7 @@ void UKF::updateLidar(const MeasurementPackage &measurement) {
     // set measurement dimension, laser can measure px, py
     const int n_z = 2;
 
-    auto sigmaConverter = [&n_z](const VectorXd& sigma) {
+    auto sigmaConverter = [&n_z](const VectorXd &sigma) {
         // measurement model
         VectorXd converted(n_z);
         converted(0) = sigma(0); // px
@@ -292,17 +298,17 @@ void UKF::updateLidar(const MeasurementPackage &measurement) {
     VectorXd z(n_z);
     z << measurement.raw_measurements_(0), measurement.raw_measurements_(1);
 
-    updateMeasurement(z, Zsig, z_pred, S);
+    laserCSV.newRow() << updateMeasurement(z, Zsig, z_pred, S);
 }
 
-void UKF::updateRadar(const MeasurementPackage &meas_package) {
+void UKF::updateRadar(const MeasurementPackage &measurement) {
 
     // Measurement prediction //
 
     // set measurement dimension, radar can measure r, phi, and r_dot
     const int n_z = 3;
 
-    auto sigmaConverter = [&n_z](const VectorXd& sigma) {
+    auto sigmaConverter = [&n_z](const VectorXd &sigma) {
         // extract values for better readability
         double p_x = sigma(0);
         double p_y = sigma(1);
@@ -332,18 +338,17 @@ void UKF::updateRadar(const MeasurementPackage &meas_package) {
     // create vector for incoming radar measurement
     VectorXd z(n_z);
 
-    double meas_rho = meas_package.raw_measurements_(0);
-    double meas_phi = meas_package.raw_measurements_(1);
-    double meas_rhod = meas_package.raw_measurements_(2);
+    double rho = measurement.raw_measurements_(0);
+    double phi = measurement.raw_measurements_(1);
+    double rho_dot = measurement.raw_measurements_(2);
 
-    z << meas_rho,
-            meas_phi,
-            meas_rhod;
+    z << rho, phi, rho_dot;
 
-    updateMeasurement(z, Zsig, z_pred, S);
+    radarCSV.newRow() << updateMeasurement(z, Zsig, z_pred, S);
 }
 
-void UKF::predictMeasurement(int n_z, const MatrixXd& R, MatrixXd& Zsig, VectorXd& z_pred, MatrixXd& S, const SigmaConverter& converter) {
+void UKF::predictMeasurement(int n_z, const MatrixXd &R, MatrixXd &Zsig, VectorXd &z_pred, MatrixXd &S,
+                             const SigmaConverter &converter) {
     // create matrix for sigma points in measurement space
     Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
     Zsig.fill(0.0);
@@ -351,7 +356,7 @@ void UKF::predictMeasurement(int n_z, const MatrixXd& R, MatrixXd& Zsig, VectorX
     // transform sigma points into measurement space
     for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
         // measurement model
-        const VectorXd& col = Xsig_pred_.col(i);
+        const VectorXd &col = Xsig_pred_.col(i);
         Zsig.col(i) << converter(col);
     }
 
@@ -377,7 +382,7 @@ void UKF::predictMeasurement(int n_z, const MatrixXd& R, MatrixXd& Zsig, VectorX
     S = S + R;
 }
 
-void UKF::updateMeasurement(const VectorXd& z, const MatrixXd& Zsig, const VectorXd& z_pred, const MatrixXd& S) {
+double UKF::updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const VectorXd &z_pred, const MatrixXd &S) {
     // create matrix for cross correlation Tc
     MatrixXd Tc = MatrixXd(n_x_, z.rows());
     Tc.fill(0.0);
@@ -404,4 +409,7 @@ void UKF::updateMeasurement(const VectorXd& z, const MatrixXd& Zsig, const Vecto
     // update state mean and covariance matrix
     x_ += K * z_diff;
     P_ -= K * S * K.transpose();
+
+    // return NIS
+    return z_diff.transpose() * S.inverse() * z_diff;
 }

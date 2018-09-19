@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
@@ -30,21 +31,20 @@ std::string hasData(std::string s) {
 int main() {
     uWS::Hub h;
 
-    // Create a Kalman Filter instance
-    UKF ukf;
-
     // used to compute the RMSE later
-    Tools tools;
     vector<VectorXd> estimations;
     vector<VectorXd> ground_truth;
 
-    h.onMessage([&ukf, &tools, &estimations, &ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-                                                            uWS::OpCode opCode) {
+    // Create a Kalman Filter instance
+    std::unique_ptr<UKF> ukf = std::make_unique<UKF>();
+
+    h.onMessage([&ukf, &estimations, &ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+                                                    uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
 
-        if (length && length > 2 && data[0] == '4' && data[1] == '2') {
+        if (length > 2 && data[0] == '4' && data[1] == '2') {
             auto s = hasData(std::string(data));
             if (s != "") {
                 auto j = json::parse(s);
@@ -103,16 +103,16 @@ int main() {
                     ground_truth.push_back(gt_values);
 
                     // Call ProcessMeasurment(meas_package) for Kalman filter
-                    ukf.processMeasurement(meas_package);
+                    ukf->processMeasurement(meas_package);
 
                     // Push the current estimated x,y positon from the Kalman filter's state vector
 
                     VectorXd estimate(4);
 
-                    double p_x = ukf.getX()(0);
-                    double p_y = ukf.getX()(1);
-                    double v = ukf.getX()(2);
-                    double yaw = ukf.getX()(3);
+                    double p_x = ukf->getX()(0);
+                    double p_y = ukf->getX()(1);
+                    double v = ukf->getX()(2);
+                    double yaw = ukf->getX()(3);
 
                     double v1 = cos(yaw) * v;
                     double v2 = sin(yaw) * v;
@@ -124,7 +124,7 @@ int main() {
 
                     estimations.push_back(estimate);
 
-                    VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
+                    VectorXd RMSE = Tools::CalculateRMSE(estimations, ground_truth);
 
                     json msgJson;
                     msgJson["estimate_x"] = p_x;
@@ -146,7 +146,10 @@ int main() {
 
     // We don't need this since we're not using HTTP but if it's removed the program
     // doesn't compile :-(
-    h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
+    h.onHttpRequest([&](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
+        // Use http to reset the ukf as a convenience
+        ukf = std::make_unique<UKF>();
+
         const std::string s = "<h1>Hello world!</h1>";
         if (req.getUrl().valueLength == 1) {
             res->end(s.data(), s.length());
@@ -157,7 +160,9 @@ int main() {
     });
 
     h.onConnection(
-        [&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) { std::cout << "Connected!!!" << std::endl; });
+            [&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
+                std::cout << "Connected!!!" << std::endl;
+            });
 
     h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
         ws.close();
