@@ -142,6 +142,15 @@ protected:
      */
     double updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const VectorXd &z_pred, const MatrixXd &S);
 
+    /**
+     * Linear update. Used for laser measurements for effeciency
+     * @param z measurement vector
+     * @param H measurement matrix
+     * @param R measurement covariance matrix
+     * @return NIS
+     */
+    double linearUpdate(const VectorXd &z, const MatrixXd &H, const MatrixXd &R);
+
 private:
     // Provided constants //
 
@@ -208,6 +217,9 @@ private:
 
     // Radar measurement covariance matrix
     MatrixXd R_laser_;
+
+    // Used for linear update of laser measurements
+    Eigen::MatrixXd H_laser_;
 
     // Used to store NIS values
     CSVWriter radarCSV;

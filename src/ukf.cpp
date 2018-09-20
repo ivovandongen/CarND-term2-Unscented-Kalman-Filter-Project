@@ -16,7 +16,7 @@ UKF::UKF() {
     x_ = VectorXd(n_x_);
 
     // initial covariance matrix
-    P_ = MatrixXd::Identity(5, 5);
+    P_ = MatrixXd::Identity(n_x_, n_x_);
 
     // Process noise covariance matrix
     Q_ = MatrixXd(2, 2);
@@ -33,6 +33,11 @@ UKF::UKF() {
     R_laser_ = MatrixXd(2, 2);
     R_laser_.row(0) << std_laspx_ * std_laspx_, 0;
     R_laser_.row(1) << 0, std_laspy_ * std_laspy_;
+
+    // Laser measurement matrix
+    H_laser_ = MatrixXd(2, n_x_);
+    H_laser_.row(0) << 1, 0, 0, 0, 0;
+    H_laser_.row(1) << 0, 1, 0, 0, 0;
 }
 
 UKF::~UKF() {
@@ -267,35 +272,8 @@ void UKF::predict(double delta_t) {
 }
 
 void UKF::updateLidar(const MeasurementPackage &measurement) {
-    // Measurement prediction //
-
-
-    // set measurement dimension, laser can measure px, py
-    const int n_z = 2;
-
-    auto sigmaConverter = [&n_z](const VectorXd &sigma) {
-        // measurement model
-        VectorXd converted(n_z);
-        converted(0) = sigma(0); // px
-        converted(1) = sigma(1); // py
-        return converted;
-    };
-
-    MatrixXd Zsig;
-    VectorXd z_pred;
-    MatrixXd S;
-
-    predictMeasurement(n_z, R_laser_, Zsig, z_pred, S, sigmaConverter);
-
-
-    // Measurement update //
-
-
-    // create vector for incoming laser measurement
-    VectorXd z(n_z);
-    z << measurement.raw_measurements_(0), measurement.raw_measurements_(1);
-
-    laserCSV.newRow() << updateMeasurement(z, Zsig, z_pred, S);
+    // For laser measurements we can do a linear update
+    laserCSV.newRow() << linearUpdate(measurement.raw_measurements_, H_laser_, R_laser_);
 }
 
 void UKF::updateRadar(const MeasurementPackage &measurement) {
@@ -409,4 +387,22 @@ double UKF::updateMeasurement(const VectorXd &z, const MatrixXd &Zsig, const Vec
 
     // return NIS
     return z_diff.transpose() * S.inverse() * z_diff;
+}
+
+double UKF::linearUpdate(const VectorXd &z, const MatrixXd &H, const MatrixXd &R) {
+    MatrixXd z_pred = H * x_;
+    VectorXd y = z - z_pred;
+    MatrixXd Ht = H.transpose();
+    MatrixXd S = H * P_ * Ht + R;
+    MatrixXd Si = S.inverse();
+    MatrixXd PHt = P_ * Ht;
+    MatrixXd K = PHt * Si;
+
+    // new estimate
+    x_ = x_ + (K * y);
+    MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
+    P_ = (I - K * H) * P_;
+
+    // return NIS
+    return y.transpose() * S.inverse() * y;
 }
