@@ -45,14 +45,11 @@ UKF::~UKF() {
 
 MatrixXd UKF::generateSigmaPoints(const VectorXd &x, const MatrixXd &P) {
 
-    // set state dimension
-    auto n_x = x.rows();
-
     // define spreading parameter
-    double lambda = 3 - n_x;
+    const double lambda = 3 - n_x_;
 
     // create sigma point matrix
-    MatrixXd Xsig(n_x, 2 * n_x + 1);
+    MatrixXd Xsig(n_x_, 2 * n_x_ + 1);
 
     // calculate square root of P
     MatrixXd A = P.llt().matrixL();
@@ -63,9 +60,9 @@ MatrixXd UKF::generateSigmaPoints(const VectorXd &x, const MatrixXd &P) {
     Xsig.col(0) << x;
 
     // Other points
-    for (size_t n = 0; n < n_x; n++) {
-        Xsig.col(1 + n) << x + sqrt(lambda + n_x) * A.col(n);
-        Xsig.col(1 + n_x + n) << x - sqrt(lambda + n_x) * A.col(n);
+    for (size_t n = 0; n < n_x_; n++) {
+        Xsig.col(1 + n) << x + sqrt(lambda + n_x_) * A.col(n);
+        Xsig.col(1 + n_x_ + n) << x - sqrt(lambda + n_x_) * A.col(n);
     }
 
     return Xsig;
@@ -73,7 +70,7 @@ MatrixXd UKF::generateSigmaPoints(const VectorXd &x, const MatrixXd &P) {
 
 MatrixXd UKF::generateAugmentedSigmaPoints(const VectorXd &x, const MatrixXd &P, const MatrixXd &Q) {
     //define spreading parameter
-    double lambda = 3 - n_aug_;
+    const double lambda = 3 - n_aug_;
 
     //create augmented mean vector
     VectorXd x_aug(n_aug_);
@@ -110,7 +107,7 @@ MatrixXd UKF::generateAugmentedSigmaPoints(const VectorXd &x, const MatrixXd &P,
 
 MatrixXd UKF::predictSigmaPoints(const MatrixXd &Xsig_aug, double delta_t) {
     // Number of sigma points
-    auto n_points = Xsig_aug.cols();
+    const auto n_points = Xsig_aug.cols();
 
     // create matrix with predicted sigma points as columns
     MatrixXd Xsig_pred(n_x_, n_points);
@@ -155,7 +152,7 @@ MatrixXd UKF::predictSigmaPoints(const MatrixXd &Xsig_aug, double delta_t) {
 }
 
 VectorXd UKF::createWeights(int augmentedStateDimension) {
-    int n_sigma_points = 2 * augmentedStateDimension + 1;
+    const int n_sigma_points = 2 * augmentedStateDimension + 1;
 
     //create vector for weights
     VectorXd weights(n_sigma_points);
